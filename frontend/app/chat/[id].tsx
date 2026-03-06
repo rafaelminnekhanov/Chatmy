@@ -11,27 +11,27 @@ import {
   ActivityIndicator,
   StatusBar,
   Keyboard,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 // Telegram Dark Colors - EXACT
 const COLORS = {
-  background: '#0E1621',      // Самый темный фон
-  surface: '#17212B',         // Фон для header/cards
-  primary: '#64A9DC',         // Акцент голубой
-  text: '#FFFFFF',            // Белый текст
-  textSecondary: '#707579',   // Серый текст
-  border: '#0E1621',          // Границы
-  myMessage: '#2B5278',       // МОИ сообщения - темно-серый!
-  otherMessage: '#182533',    // Входящие - темно-серый
-  inputBg: '#17212B',         // Фон поля ввода
+  background: '#0E1621',
+  surface: '#17212B',
+  primary: '#64A9DC',
+  text: '#FFFFFF',
+  textSecondary: '#707579',
+  border: '#0E1621',
+  myMessage: '#2B5278',
+  otherMessage: '#182533',
+  inputBg: '#17212B',
 };
 
 export default function ChatScreen() {
@@ -91,20 +91,12 @@ export default function ChatScreen() {
         `${API_URL}/api/chats/${chatId}/messages`,
         { params: { limit: 100 } }
       );
-      setMessages(response.data);
-      setTimeout(() => scrollToBottom(), 100);
+      // Reverse for inverted list
+      setMessages([...response.data].reverse());
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const scrollToBottom = () => {
-    if (flatListRef.current && messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
     }
   };
 
@@ -127,8 +119,8 @@ export default function ChatScreen() {
         }
       );
 
-      setMessages(prev => [...prev, response.data]);
-      setTimeout(() => scrollToBottom(), 100);
+      // Add to beginning of inverted list
+      setMessages(prev => [response.data, ...prev]);
     } catch (error) {
       console.error('Error sending message:', error);
       setInputText(messageText);
@@ -149,8 +141,7 @@ export default function ChatScreen() {
     const isMyMessage = item.sender_id === user?.id;
     const showAvatar =
       !isMyMessage &&
-      (index === messages.length - 1 ||
-        messages[index + 1]?.sender_id !== item.sender_id);
+      (index === 0 || messages[index - 1]?.sender_id !== item.sender_id);
 
     const senderUser = chat?.participants?.find(p => p.id === item.sender_id);
 
@@ -207,8 +198,8 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
     >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
@@ -247,9 +238,8 @@ export default function ChatScreen() {
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
+        inverted
         contentContainerStyle={styles.messagesList}
-        onContentSizeChange={scrollToBottom}
-        onLayout={scrollToBottom}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={80} color={COLORS.textSecondary} />
@@ -265,7 +255,6 @@ export default function ChatScreen() {
           placeholderTextColor={COLORS.textSecondary}
           value={inputText}
           onChangeText={setInputText}
-          onFocus={scrollToBottom}
           multiline
           maxLength={1000}
         />
@@ -325,7 +314,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     padding: 16,
-    paddingBottom: 8,
+    flexGrow: 1,
   },
   messageRow: {
     flexDirection: 'row',
@@ -425,6 +414,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 100,
+    transform: [{ scaleY: -1 }],
   },
   emptyText: {
     fontSize: 16,
