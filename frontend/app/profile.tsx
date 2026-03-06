@@ -44,7 +44,6 @@ export default function ProfileScreen() {
       if (userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        // Refresh user data from server
         const response = await axios.get(`${API_URL}/api/users/${parsedUser.id}`);
         setUser(response.data);
         await AsyncStorage.setItem('user', JSON.stringify(response.data));
@@ -108,15 +107,15 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle=\"light-content\" backgroundColor={COLORS.background} />
-        <ActivityIndicator size=\"large\" color={COLORS.primary} />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle=\"light-content\" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
@@ -124,7 +123,7 @@ export default function ProfileScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name=\"arrow-back\" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Профиль</Text>
         <View style={{ width: 40 }} />
@@ -153,9 +152,9 @@ export default function ProfileScreen() {
             
             <View style={styles.editBadge}>
               {uploading ? (
-                <ActivityIndicator size=\"small\" color={COLORS.text} />
+                <ActivityIndicator size="small" color={COLORS.text} />
               ) : (
-                <Ionicons name=\"camera\" size={20} color={COLORS.text} />
+                <Ionicons name="camera" size={20} color={COLORS.text} />
               )}
             </View>
           </TouchableOpacity>
@@ -172,21 +171,21 @@ export default function ProfileScreen() {
             onPress={pickImage}
             activeOpacity={0.7}
           >
-            <Ionicons name=\"image-outline\" size={24} color={COLORS.primary} />
+            <Ionicons name="image-outline" size={24} color={COLORS.primary} />
             <Text style={styles.menuText}>Изменить фото</Text>
-            <Ionicons name=\"chevron-forward\" size={24} color={COLORS.textSecondary} />
+            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => Alert.alert('Информация', `Версия: 1.0.0\\nМой Чат - приватный мессенджер`)}
+            onPress={() => Alert.alert('Информация', 'Версия: 1.0.0\nМой Чат - приватный мессенджер')}
             activeOpacity={0.7}
           >
-            <Ionicons name=\"information-circle-outline\" size={24} color={COLORS.primary} />
+            <Ionicons name="information-circle-outline" size={24} color={COLORS.primary} />
             <Text style={styles.menuText}>О приложении</Text>
-            <Ionicons name=\"chevron-forward\" size={24} color={COLORS.textSecondary} />
+            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
