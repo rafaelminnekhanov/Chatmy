@@ -70,6 +70,10 @@ class UserRegister(BaseModel):
     name: str
     email: EmailStr
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+
 class UserResponse(BaseModel):
     id: str
     name: str
@@ -166,6 +170,34 @@ async def get_user(user_id: str):
         return serialize_doc(user)
     except:
         raise HTTPException(status_code=400, detail="Invalid user ID")
+
+@api_router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: str, user_data: UserUpdate):
+    """Update user profile (name, avatar)"""
+    try:
+        update_dict = {}
+        if user_data.name:
+            update_dict["name"] = user_data.name
+        if user_data.avatar:
+            update_dict["avatar"] = user_data.avatar
+        
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No data to update")
+        
+        result = await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": update_dict}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        return serialize_doc(user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.post("/chats", response_model=ChatResponse)
 async def create_chat(chat_data: ChatCreate, current_user_id: str):

@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -41,10 +42,32 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef(null);
 
   useEffect(() => {
     loadUser();
+    
+    // Keyboard listeners
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    );
+    
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -109,7 +132,6 @@ export default function ChatScreen() {
     const messageText = inputText.trim();
     setInputText('');
     setSending(true);
-    Keyboard.dismiss();
 
     try {
       const response = await axios.post(
@@ -124,7 +146,7 @@ export default function ChatScreen() {
       );
 
       setMessages(prev => [...prev, response.data]);
-      scrollToBottom();
+      setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error('Error sending message:', error);
       setInputText(messageText);
@@ -148,6 +170,8 @@ export default function ChatScreen() {
       (index === messages.length - 1 ||
         messages[index + 1]?.sender_id !== item.sender_id);
 
+    const senderUser = chat?.participants?.find(p => p.id === item.sender_id);
+
     return (
       <View
         style={[
@@ -157,11 +181,18 @@ export default function ChatScreen() {
       >
         {!isMyMessage && showAvatar && (
           <View style={styles.messageAvatar}>
-            <View style={styles.miniAvatar}>
-              <Text style={styles.miniAvatarText}>
-                {item.sender_name?.charAt(0).toUpperCase()}
-              </Text>
-            </View>
+            {senderUser?.avatar ? (
+              <Image
+                source={{ uri: senderUser.avatar }}
+                style={styles.miniAvatar}
+              />
+            ) : (
+              <View style={styles.miniAvatarPlaceholder}>
+                <Text style={styles.miniAvatarText}>
+                  {item.sender_name?.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
           </View>
         )}
         {!isMyMessage && !showAvatar && <View style={styles.messageAvatarPlaceholder} />}
@@ -230,8 +261,9 @@ export default function ChatScreen() {
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesList}
+        contentContainerStyle={[styles.messagesList, { paddingBottom: keyboardHeight > 0 ? 20 : 0 }]}
         onContentSizeChange={scrollToBottom}
+        onLayout={scrollToBottom}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={80} color={COLORS.textSecondary} />
@@ -242,7 +274,7 @@ export default function ChatScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           <TextInput
@@ -251,6 +283,7 @@ export default function ChatScreen() {
             placeholderTextColor={COLORS.textSecondary}
             value={inputText}
             onChangeText={setInputText}
+            onFocus={scrollToBottom}
             multiline
             maxLength={1000}
           />
@@ -329,6 +362,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   miniAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  miniAvatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,

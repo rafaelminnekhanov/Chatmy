@@ -162,11 +162,22 @@ export default function ChatsScreen() {
       
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
-          style={styles.searchButton}
-          onPress={() => router.push('/search')}
+          style={styles.avatarButton}
+          onPress={() => router.push('/profile')}
           activeOpacity={0.7}
         >
-          <Ionicons name="search" size={24} color={COLORS.text} />
+          {user?.avatar ? (
+            <Image
+              source={{ uri: user.avatar }}
+              style={styles.headerAvatar}
+            />
+          ) : (
+            <View style={styles.headerAvatarPlaceholder}>
+              <Text style={styles.headerAvatarText}>
+                {user?.name?.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         
         <View style={styles.headerCenter}>
@@ -180,10 +191,10 @@ export default function ChatsScreen() {
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => router.push('/new-group')}
+            onPress={() => router.push('/search')}
             activeOpacity={0.7}
           >
-            <Ionicons name="people-outline" size={24} color={COLORS.text} />
+            <Ionicons name="search" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
@@ -236,6 +247,27 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     padding: 8,
+  },
+  avatarButton: {
+    marginRight: 8,
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  headerAvatarPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerAvatarText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
   },
   headerCenter: {
     flexDirection: 'row',
