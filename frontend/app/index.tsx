@@ -9,14 +9,24 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Telegram Dark Theme Colors
+const COLORS = {
+  background: '#0E1621',
+  surface: '#1C2733',
+  primary: '#2A9FD6',
+  text: '#FFFFFF',
+  textSecondary: '#8E9AA6',
+  border: '#2E3A47',
+};
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -33,7 +43,6 @@ export default function RegisterScreen() {
     try {
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
-        // User already registered, go to chats
         router.replace('/chats');
       }
     } catch (error) {
@@ -49,7 +58,6 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Simple email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Ошибка', 'Пожалуйста, введите корректный email');
@@ -65,15 +73,12 @@ export default function RegisterScreen() {
       });
 
       if (response.data && response.data.id) {
-        // Save user data
         await AsyncStorage.setItem('user', JSON.stringify(response.data));
-        
-        // Navigate to chats
         router.replace('/chats');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Ошибка', 'Не удалось зарегистрироваться. Проверьте подключение к интернету.');
+      Alert.alert('Ошибка', 'Не удалось зарегистрироваться');
     } finally {
       setLoading(false);
     }
@@ -82,33 +87,35 @@ export default function RegisterScreen() {
   if (checking) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#667eea', '#764ba2', '#f093fb']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <BlurView intensity={30} style={styles.blurContainer}>
-          <View style={styles.card}>
-            <Text style={styles.title}>My Chat</Text>
-            <Text style={styles.subtitle}>Ваш личный мессенджер</Text>
+        <View style={styles.content}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="chatbubbles" size={80} color={COLORS.primary} />
+          </View>
+          
+          <Text style={styles.title}>My Chat</Text>
+          <Text style={styles.subtitle}>Простой мессенджер для друзей</Text>
 
+          <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Имя</Text>
+              <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Введите ваше имя"
-                placeholderTextColor="#999"
+                placeholder="Ваше имя"
+                placeholderTextColor={COLORS.textSecondary}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -116,11 +123,11 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Введите ваш email"
-                placeholderTextColor="#999"
+                placeholder="Email"
+                placeholderTextColor={COLORS.textSecondary}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -132,15 +139,16 @@ export default function RegisterScreen() {
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleRegister}
               disabled={loading}
+              activeOpacity={0.7}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={COLORS.text} />
               ) : (
                 <Text style={styles.buttonText}>Войти</Text>
               )}
             </TouchableOpacity>
           </View>
-        </BlurView>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -149,65 +157,66 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.background,
   },
   keyboardView: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
+    padding: 24,
+  },
+  iconContainer: {
     alignItems: 'center',
-  },
-  blurContainer: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    width: '90%',
-    maxWidth: 400,
-  },
-  card: {
-    padding: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginBottom: 24,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#f0f0f0',
+    fontSize: 15,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 48,
+  },
+  form: {
+    gap: 12,
   },
   inputContainer: {
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 52,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 8,
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 16,
+    flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: COLORS.text,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
-    padding: 16,
+    height: 52,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
+    marginTop: 12,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: COLORS.text,
+    fontSize: 17,
     fontWeight: '600',
   },
 });

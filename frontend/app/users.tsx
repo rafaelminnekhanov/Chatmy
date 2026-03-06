@@ -7,15 +7,24 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+const COLORS = {
+  background: '#0E1621',
+  surface: '#1C2733',
+  primary: '#2A9FD6',
+  text: '#FFFFFF',
+  textSecondary: '#8E9AA6',
+  border: '#2E3A47',
+  online: '#4CD964',
+};
 
 export default function UsersScreen() {
   const router = useRouter();
@@ -64,7 +73,6 @@ export default function UsersScreen() {
   const loadUsers = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/users`);
-      // Filter out current user
       const otherUsers = response.data.filter(u => u.id !== user.id);
       setUsers(otherUsers);
       setFilteredUsers(otherUsers);
@@ -89,7 +97,7 @@ export default function UsersScreen() {
       );
 
       router.replace('/chats');
-      router.push(`/chat/${response.data.id}`);
+      setTimeout(() => router.push(`/chat/${response.data.id}`), 100);
     } catch (error) {
       console.error('Error creating chat:', error);
     }
@@ -99,90 +107,78 @@ export default function UsersScreen() {
     <TouchableOpacity
       style={styles.userItem}
       onPress={() => startChat(item)}
+      activeOpacity={0.7}
     >
-      <BlurView intensity={20} style={styles.userBlur}>
-        <View style={styles.userContent}>
-          <View style={styles.avatarContainer}>
-            <LinearGradient
-              colors={['#667eea', '#764ba2']}
-              style={styles.avatar}
-            >
-              <Text style={styles.avatarText}>
-                {item.name.charAt(0).toUpperCase()}
-              </Text>
-            </LinearGradient>
-            {item.online && <View style={styles.onlineIndicator} />}
-          </View>
-
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{item.name}</Text>
-            <Text style={styles.userEmail}>{item.email}</Text>
-          </View>
-
-          <Ionicons name="chatbubble-ellipses-outline" size={24} color="#007AFF" />
+      <View style={styles.avatarContainer}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {item.name.charAt(0).toUpperCase()}
+          </Text>
         </View>
-      </BlurView>
+        {item.online && <View style={styles.onlineIndicator} />}
+      </View>
+
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.name}</Text>
+        <Text style={styles.userEmail}>{item.email}</Text>
+      </View>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          colors={['#1a1a1a', '#2d2d2d']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#1a1a1a', '#2d2d2d']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Пользователи</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Новый чат</Text>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.push('/new-group')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.headerButtonText}>Группа</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
-        <BlurView intensity={20} style={styles.searchBlur}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#999" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Поиск..."
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color="#999" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </BlurView>
+        <Ionicons name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Поиск..."
+          placeholderTextColor={COLORS.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
+            <Ionicons name="close-circle" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <FlatList
         data={filteredUsers}
         renderItem={renderUserItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="people-outline" size={80} color="#666" />
+            <Ionicons name="people-outline" size={80} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>
               {searchQuery ? 'Пользователи не найдены' : 'Нет пользователей'}
             </Text>
@@ -196,81 +192,74 @@ export default function UsersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 50,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: COLORS.background,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  headerButton: {
+    padding: 8,
+  },
+  headerButtonText: {
+    fontSize: 16,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  searchBlur: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: 'rgba(60, 60, 60, 0.6)',
-    gap: 8,
+    backgroundColor: COLORS.surface,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    height: 40,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#fff',
-  },
-  listContainer: {
-    padding: 16,
+    color: COLORS.text,
   },
   userItem: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  userBlur: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  userContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(60, 60, 60, 0.6)',
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLORS.border,
   },
   avatarContainer: {
     position: 'relative',
     marginRight: 12,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
+    color: COLORS.text,
   },
   onlineIndicator: {
     position: 'absolute',
@@ -279,9 +268,9 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#4CD964',
+    backgroundColor: COLORS.online,
     borderWidth: 2,
-    borderColor: '#2d2d2d',
+    borderColor: COLORS.background,
   },
   userInfo: {
     flex: 1,
@@ -289,12 +278,12 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: COLORS.text,
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: '#999',
+    color: COLORS.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -302,8 +291,8 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#999',
+    fontSize: 16,
+    color: COLORS.textSecondary,
     marginTop: 16,
   },
 });

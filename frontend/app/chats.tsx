@@ -7,16 +7,25 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
-import io from 'socket.io-client';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+const COLORS = {
+  background: '#0E1621',
+  surface: '#1C2733',
+  primary: '#2A9FD6',
+  text: '#FFFFFF',
+  textSecondary: '#8E9AA6',
+  border: '#2E3A47',
+  online: '#4CD964',
+  unread: '#2A9FD6',
+};
 
 export default function ChatsScreen() {
   const router = useRouter();
@@ -24,7 +33,6 @@ export default function ChatsScreen() {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     loadUser();
@@ -33,7 +41,8 @@ export default function ChatsScreen() {
   useEffect(() => {
     if (user) {
       loadChats();
-      connectWebSocket();
+      const interval = setInterval(loadChats, 3000);
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -51,35 +60,6 @@ export default function ChatsScreen() {
     }
   };
 
-  const connectWebSocket = () => {
-    if (!user) return;
-
-    const wsUrl = API_URL.replace(/^https/, 'wss').replace(/^http/, 'ws');
-    const newSocket = io(wsUrl, {
-      transports: ['websocket'],
-      path: `/ws/${user.id}`,
-    });
-
-    newSocket.on('connect', () => {
-      console.log('WebSocket connected');
-    });
-
-    newSocket.on('new_message', (data) => {
-      console.log('New message received:', data);
-      loadChats();
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  };
-
   const loadChats = async () => {
     if (!user) return;
     
@@ -87,7 +67,6 @@ export default function ChatsScreen() {
       const response = await axios.get(`${API_URL}/api/chats`, {
         params: { user_id: user.id },
       });
-      
       setChats(response.data);
     } catch (error) {
       console.error('Error loading chats:', error);
@@ -112,105 +91,91 @@ export default function ChatsScreen() {
     const days = Math.floor(diff / 86400000);
     
     if (minutes < 1) return 'сейчас';
-    if (minutes < 60) return `${minutes} мин`;
-    if (hours < 24) return `${hours} ч`;
-    if (days < 7) return `${days} дн`;
+    if (minutes < 60) return `${minutes}м`;
+    if (hours < 24) return `${hours}ч`;
+    if (days < 7) return `${days}д`;
     
-    return date.toLocaleDateString('ru-RU');
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
-  const renderChatItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => router.push(`/chat/${item.id}`)}
-    >
-      <BlurView intensity={20} style={styles.chatBlur}>
+  const renderChatItem = ({ item }) => {
+    const otherUser = item.participants?.find(p => p.id !== user?.id);
+    const isOnline = item.participants?.some(p => p.id !== user?.id && p.online);
+
+    return (
+      <TouchableOpacity
+        style={styles.chatItem}
+        onPress={() => router.push(`/chat/${item.id}`)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {(item.name || 'U').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          {isOnline && <View style={styles.onlineIndicator} />}
+        </View>
+        
         <View style={styles.chatContent}>
-          <View style={styles.avatarContainer}>
-            <LinearGradient
-              colors={['#667eea', '#764ba2']}
-              style={styles.avatar}
-            >
-              <Text style={styles.avatarText}>
-                {item.name?.charAt(0).toUpperCase()}
+          <View style={styles.chatHeader}>
+            <Text style={styles.chatName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            {item.last_message && (
+              <Text style={styles.chatTime}>
+                {formatTime(item.last_message.timestamp)}
               </Text>
-            </LinearGradient>
-            {item.participants?.some(p => p.online) && (
-              <View style={styles.onlineIndicator} />
             )}
           </View>
           
-          <View style={styles.chatInfo}>
-            <View style={styles.chatHeader}>
-              <Text style={styles.chatName} numberOfLines={1}>
-                {item.name}
-              </Text>
-              {item.last_message && (
-                <Text style={styles.chatTime}>
-                  {formatTime(item.last_message.timestamp)}
-                </Text>
-              )}
-            </View>
-            
-            <View style={styles.chatFooter}>
-              <Text style={styles.lastMessage} numberOfLines={1}>
-                {item.last_message?.text || 'Нет сообщений'}
-              </Text>
-              {item.unread_count > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{item.unread_count}</Text>
-                </View>
-              )}
-            </View>
+          <View style={styles.chatFooter}>
+            <Text style={styles.lastMessage} numberOfLines={1}>
+              {item.last_message?.text || 'Нет сообщений'}
+            </Text>
+            {item.unread_count > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>{item.unread_count}</Text>
+              </View>
+            )}
           </View>
         </View>
-      </BlurView>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          colors={['#1a1a1a', '#2d2d2d']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#1a1a1a', '#2d2d2d']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Чаты</Text>
+        <Text style={styles.headerTitle}>My Chat</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => router.push('/users')}
+            activeOpacity={0.7}
           >
-            <Ionicons name="person-add" size={24} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.push('/new-group')}
-          >
-            <Ionicons name="people" size={24} color="#fff" />
+            <Ionicons name="create-outline" size={28} color={COLORS.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {chats.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="chatbubbles-outline" size={80} color="#666" />
+          <Ionicons name="chatbubbles-outline" size={80} color={COLORS.textSecondary} />
           <Text style={styles.emptyText}>Нет чатов</Text>
           <Text style={styles.emptySubtext}>
-            Нажмите + чтобы начать общение
+            Нажмите на иконку сверху чтобы начать
           </Text>
         </View>
       ) : (
@@ -218,12 +183,11 @@ export default function ChatsScreen() {
           data={chats}
           renderItem={renderChatItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#fff"
+              tintColor={COLORS.primary}
             />
           }
         />
@@ -235,77 +199,63 @@ export default function ChatsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 50,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: COLORS.background,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   headerButtons: {
     flexDirection: 'row',
-    gap: 16,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContainer: {
-    padding: 16,
+    padding: 8,
   },
   chatItem: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  chatBlur: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  chatContent: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: 'rgba(60, 60, 60, 0.6)',
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLORS.border,
   },
   avatarContainer: {
     position: 'relative',
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 12,
   },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatarText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
+    color: COLORS.text,
   },
   onlineIndicator: {
     position: 'absolute',
     bottom: 0,
-    right: 12,
+    right: 0,
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#4CD964',
+    backgroundColor: COLORS.online,
     borderWidth: 2,
-    borderColor: '#2d2d2d',
+    borderColor: COLORS.background,
   },
-  chatInfo: {
+  chatContent: {
     flex: 1,
     justifyContent: 'center',
   },
@@ -318,12 +268,12 @@ const styles = StyleSheet.create({
   chatName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: COLORS.text,
     flex: 1,
   },
   chatTime: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 13,
+    color: COLORS.textSecondary,
     marginLeft: 8,
   },
   chatFooter: {
@@ -332,24 +282,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lastMessage: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 15,
+    color: COLORS.textSecondary,
     flex: 1,
   },
   unreadBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
+    backgroundColor: COLORS.unread,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     marginLeft: 8,
   },
   unreadText: {
-    color: '#fff',
+    color: COLORS.text,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -357,14 +307,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.text,
     marginTop: 16,
   },
   emptySubtext: {
-    fontSize: 16,
-    color: '#999',
+    fontSize: 15,
+    color: COLORS.textSecondary,
     marginTop: 8,
+    textAlign: 'center',
   },
 });

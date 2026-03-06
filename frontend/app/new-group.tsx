@@ -10,15 +10,23 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+const COLORS = {
+  background: '#0E1621',
+  surface: '#1C2733',
+  primary: '#2A9FD6',
+  text: '#FFFFFF',
+  textSecondary: '#8E9AA6',
+  border: '#2E3A47',
+};
 
 export default function NewGroupScreen() {
   const router = useRouter();
@@ -99,7 +107,7 @@ export default function NewGroupScreen() {
       );
 
       router.replace('/chats');
-      router.push(`/chat/${response.data.id}`);
+      setTimeout(() => router.push(`/chat/${response.data.id}`), 100);
     } catch (error) {
       console.error('Error creating group:', error);
       Alert.alert('Ошибка', 'Не удалось создать группу');
@@ -115,37 +123,31 @@ export default function NewGroupScreen() {
       <TouchableOpacity
         style={styles.userItem}
         onPress={() => toggleUserSelection(item.id)}
+        activeOpacity={0.7}
       >
-        <BlurView intensity={20} style={styles.userBlur}>
-          <View style={styles.userContent}>
-            <View style={styles.avatarContainer}>
-              <LinearGradient
-                colors={['#667eea', '#764ba2']}
-                style={styles.avatar}
-              >
-                <Text style={styles.avatarText}>
-                  {item.name.charAt(0).toUpperCase()}
-                </Text>
-              </LinearGradient>
-            </View>
-
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{item.name}</Text>
-              <Text style={styles.userEmail}>{item.email}</Text>
-            </View>
-
-            <View
-              style={[
-                styles.checkbox,
-                isSelected && styles.checkboxSelected,
-              ]}
-            >
-              {isSelected && (
-                <Ionicons name="checkmark" size={20} color="#fff" />
-              )}
-            </View>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.name.charAt(0).toUpperCase()}
+            </Text>
           </View>
-        </BlurView>
+        </View>
+
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.name}</Text>
+          <Text style={styles.userEmail}>{item.email}</Text>
+        </View>
+
+        <View
+          style={[
+            styles.checkbox,
+            isSelected && styles.checkboxSelected,
+          ]}
+        >
+          {isSelected && (
+            <Ionicons name="checkmark" size={18} color={COLORS.text} />
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -153,21 +155,15 @@ export default function NewGroupScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          colors={['#1a1a1a', '#2d2d2d']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#1a1a1a', '#2d2d2d']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -177,41 +173,45 @@ export default function NewGroupScreen() {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
+            activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Новая группа</Text>
           <TouchableOpacity
-            style={[
-              styles.createButton,
-              (selectedUsers.length === 0 || !groupName.trim() || creating) &&
-                styles.createButtonDisabled,
-            ]}
+            style={styles.createButton}
             onPress={createGroup}
             disabled={selectedUsers.length === 0 || !groupName.trim() || creating}
+            activeOpacity={0.7}
           >
             {creating ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
-              <Text style={styles.createButtonText}>Создать</Text>
+              <Text
+                style={[
+                  styles.createButtonText,
+                  (selectedUsers.length === 0 || !groupName.trim()) &&
+                    styles.createButtonTextDisabled,
+                ]}
+              >
+                Создать
+              </Text>
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.groupNameContainer}>
-          <BlurView intensity={20} style={styles.groupNameBlur}>
-            <View style={styles.groupNameInput}>
-              <Ionicons name="people" size={24} color="#999" />
-              <TextInput
-                style={styles.input}
-                placeholder="Название группы"
-                placeholderTextColor="#999"
-                value={groupName}
-                onChangeText={setGroupName}
-                maxLength={50}
-              />
-            </View>
-          </BlurView>
+          <View style={styles.groupNameInput}>
+            <Ionicons name="people-outline" size={24} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.input}
+              placeholder="Название группы"
+              placeholderTextColor={COLORS.textSecondary}
+              value={groupName}
+              onChangeText={setGroupName}
+              maxLength={50}
+            />
+          </View>
         </View>
 
         {selectedUsers.length > 0 && (
@@ -219,41 +219,15 @@ export default function NewGroupScreen() {
             <Text style={styles.selectedTitle}>
               Выбрано: {selectedUsers.length}
             </Text>
-            <FlatList
-              horizontal
-              data={selectedUsers}
-              keyExtractor={(item) => item}
-              renderItem={({ item: userId }) => {
-                const selectedUser = users.find(u => u.id === userId);
-                if (!selectedUser) return null;
-
-                return (
-                  <View style={styles.selectedUserChip}>
-                    <Text style={styles.selectedUserName} numberOfLines={1}>
-                      {selectedUser.name}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => toggleUserSelection(userId)}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                      <Ionicons name="close-circle" size={20} color="#999" />
-                    </TouchableOpacity>
-                  </View>
-                );
-              }}
-              contentContainerStyle={styles.selectedList}
-              showsHorizontalScrollIndicator={false}
-            />
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Выберите участников</Text>
+        <Text style={styles.sectionTitle}>Участники</Text>
 
         <FlatList
           data={users}
           renderItem={renderUserItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
         />
       </KeyboardAvoidingView>
     </View>
@@ -263,115 +237,76 @@ export default function NewGroupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 50,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: COLORS.background,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
   },
   createButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  createButtonDisabled: {
-    opacity: 0.5,
+    padding: 8,
   },
   createButtonText: {
-    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  createButtonTextDisabled: {
+    color: COLORS.textSecondary,
   },
   groupNameContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  groupNameBlur: {
-    borderRadius: 12,
-    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   groupNameInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(60, 60, 60, 0.6)',
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    height: 52,
     gap: 12,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#fff',
+    color: COLORS.text,
   },
   selectedContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   selectedTitle: {
     fontSize: 14,
-    color: '#999',
-    marginBottom: 8,
-  },
-  selectedList: {
-    gap: 8,
-  },
-  selectedUserChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 122, 255, 0.3)',
-    borderRadius: 16,
-    paddingVertical: 6,
-    paddingLeft: 12,
-    paddingRight: 8,
-    gap: 6,
-    maxWidth: 120,
-  },
-  selectedUserName: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '500',
+    color: COLORS.textSecondary,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#999',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    color: COLORS.textSecondary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     textTransform: 'uppercase',
   },
-  listContainer: {
-    padding: 16,
-  },
   userItem: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  userBlur: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  userContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(60, 60, 60, 0.6)',
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLORS.border,
   },
   avatarContainer: {
     marginRight: 12,
@@ -380,13 +315,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '600',
+    color: COLORS.text,
   },
   userInfo: {
     flex: 1,
@@ -394,24 +330,24 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: COLORS.text,
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: '#999',
+    color: COLORS.textSecondary,
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#999',
+    borderColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
 });

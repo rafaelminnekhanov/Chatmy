@@ -9,16 +9,25 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
-import io from 'socket.io-client';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+const COLORS = {
+  background: '#0E1621',
+  surface: '#1C2733',
+  primary: '#2A9FD6',
+  text: '#FFFFFF',
+  textSecondary: '#8E9AA6',
+  border: '#2E3A47',
+  myMessage: '#2A9FD6',
+  otherMessage: '#1C2733',
+};
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -30,7 +39,6 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const flatListRef = useRef(null);
-  const socketRef = useRef(null);
 
   useEffect(() => {
     loadUser();
@@ -40,14 +48,9 @@ export default function ChatScreen() {
     if (user) {
       loadChat();
       loadMessages();
-      connectWebSocket();
+      const interval = setInterval(loadMessages, 3000);
+      return () => clearInterval(interval);
     }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
   }, [user]);
 
   const loadUser = async () => {
@@ -62,27 +65,6 @@ export default function ChatScreen() {
       console.error('Error loading user:', error);
       router.replace('/');
     }
-  };
-
-  const connectWebSocket = () => {
-    if (!user) return;
-
-    const wsUrl = API_URL.replace(/^https/, 'wss').replace(/^http/, 'ws');
-    socketRef.current = io(wsUrl, {
-      transports: ['websocket'],
-      path: `/ws/${user.id}`,
-    });
-
-    socketRef.current.on('connect', () => {
-      console.log('WebSocket connected');
-    });
-
-    socketRef.current.on('new_message', (data) => {
-      if (data.data.chat_id === chatId) {
-        setMessages(prev => [...prev, data.data]);
-        scrollToBottom();
-      }
-    });
   };
 
   const loadChat = async () => {
@@ -171,11 +153,11 @@ export default function ChatScreen() {
       >
         {!isMyMessage && showAvatar && (
           <View style={styles.messageAvatar}>
-            <LinearGradient colors={['#667eea', '#764ba2']} style={styles.miniAvatar}>
+            <View style={styles.miniAvatar}>
               <Text style={styles.miniAvatarText}>
                 {item.sender_name?.charAt(0).toUpperCase()}
               </Text>
-            </LinearGradient>
+            </View>
           </View>
         )}
         {!isMyMessage && !showAvatar && <View style={styles.messageAvatarPlaceholder} />}
@@ -190,16 +172,7 @@ export default function ChatScreen() {
             <Text style={styles.senderName}>{item.sender_name}</Text>
           )}
           <Text style={styles.messageText}>{item.text}</Text>
-          <View style={styles.messageFooter}>
-            <Text style={styles.messageTime}>{formatTime(item.timestamp)}</Text>
-            {isMyMessage && (
-              <Ionicons
-                name={item.read ? 'checkmark-done' : 'checkmark'}
-                size={16}
-                color={item.read ? '#4CD964' : '#999'}
-              />
-            )}
-          </View>
+          <Text style={styles.messageTime}>{formatTime(item.timestamp)}</Text>
         </View>
       </View>
     );
@@ -208,26 +181,23 @@ export default function ChatScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          colors={['#1a1a1a', '#2d2d2d']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#1a1a1a', '#2d2d2d']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      {/* Header */}
-      <BlurView intensity={30} style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
@@ -248,12 +218,9 @@ export default function ChatScreen() {
           )}
         </View>
 
-        <TouchableOpacity style={styles.headerButton}>
-          <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-        </TouchableOpacity>
-      </BlurView>
+        <View style={{ width: 40 }} />
+      </View>
 
-      {/* Messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -263,45 +230,43 @@ export default function ChatScreen() {
         onContentSizeChange={scrollToBottom}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={80} color="#666" />
+            <Ionicons name="chatbubbles-outline" size={80} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>Нет сообщений</Text>
-            <Text style={styles.emptySubtext}>Начните разговор!</Text>
           </View>
         }
       />
 
-      {/* Input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        <BlurView intensity={30} style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Сообщение..."
-              placeholderTextColor="#999"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={1000}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                (!inputText.trim() || sending) && styles.sendButtonDisabled,
-              ]}
-              onPress={sendMessage}
-              disabled={!inputText.trim() || sending}
-            >
-              {sending ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons name="send" size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </BlurView>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Сообщение"
+            placeholderTextColor={COLORS.textSecondary}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={1000}
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={sendMessage}
+            disabled={!inputText.trim() || sending}
+            activeOpacity={0.7}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Ionicons
+                name="send"
+                size={22}
+                color={inputText.trim() ? COLORS.primary : COLORS.textSecondary}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -310,45 +275,34 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 50,
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    paddingBottom: 8,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLORS.border,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    padding: 8,
+    marginRight: 8,
   },
   headerInfo: {
     flex: 1,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '600',
+    color: COLORS.text,
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 13,
+    color: COLORS.textSecondary,
     marginTop: 2,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   messagesList: {
     padding: 16,
@@ -375,13 +329,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   miniAvatarText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '600',
+    color: COLORS.text,
   },
   messageBubble: {
     maxWidth: '75%',
@@ -389,65 +344,55 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   myMessageBubble: {
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.myMessage,
     borderBottomRightRadius: 4,
   },
   otherMessageBubble: {
-    backgroundColor: 'rgba(60, 60, 60, 0.8)',
+    backgroundColor: COLORS.otherMessage,
     borderBottomLeftRadius: 4,
   },
   senderName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#667eea',
+    color: COLORS.primary,
     marginBottom: 4,
   },
   messageText: {
     fontSize: 16,
-    color: '#fff',
+    color: COLORS.text,
     lineHeight: 20,
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 4,
-    gap: 4,
+    marginBottom: 4,
   },
   messageTime: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: COLORS.textSecondary,
+    alignSelf: 'flex-end',
   },
   inputContainer: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
-    gap: 8,
+    padding: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(60, 60, 60, 0.8)',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#fff',
+    color: COLORS.text,
     maxHeight: 100,
+    marginRight: 8,
   },
   sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    opacity: 0.5,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -455,14 +400,8 @@ const styles = StyleSheet.create({
     paddingVertical: 100,
   },
   emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 16,
+    color: COLORS.textSecondary,
     marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
   },
 });
