@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -168,15 +169,30 @@ export default function ChatsScreen() {
           <Ionicons name="search" size={24} color={COLORS.text} />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Мой Чат</Text>
+        <View style={styles.headerCenter}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logo}
+          />
+          <Text style={styles.headerTitle}>Мой Чат</Text>
+        </View>
         
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => router.push('/users')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="create-outline" size={28} color={COLORS.text} />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.push('/new-group')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="people-outline" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.push('/users')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="create-outline" size={28} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {chats.length === 0 ? (
@@ -221,10 +237,24 @@ const styles = StyleSheet.create({
   searchButton: {
     padding: 8,
   },
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logo: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.text,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 4,
   },
   headerButton: {
     padding: 8,
