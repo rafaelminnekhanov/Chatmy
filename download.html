@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скачать Мой Чат</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .logo { font-size: 80px; margin-bottom: 20px; }
+        h1 { color: #1a1a1a; font-size: 36px; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 18px; margin-bottom: 40px; }
+        .download-btn {
+            display: block;
+            background: #0E1621;
+            color: white;
+            padding: 20px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .step {
+            color: #444;
+            font-size: 16px;
+            line-height: 1.8;
+            margin: 10px 0;
+        }
+        .github {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🐵</div>
+        <h1>Мой Чат</h1>
+        <p class="subtitle">Скачать проект</p>
+        
+        <a href="/api/download/project" class="download-btn">
+            📥 СКАЧАТЬ ПРОЕКТ (5.5 MB)
+        </a>
+        
+        <div class="info">
+            <strong style="font-size: 18px; color: #1a1a1a;">📝 Дальше:</strong><br><br>
+            <div class="step">1️⃣ Скачай архив</div>
+            <div class="step">2️⃣ Распакуй на телефоне</div>
+            <div class="step">3️⃣ Загрузи на GitHub:</div>
+            <div class="github">rafaelminnekhanov</div>
+            <div class="step">4️⃣ Создай APK на <strong>expo.dev</strong></div>
+        </div>
+    </div>
+</body>
+</html>
