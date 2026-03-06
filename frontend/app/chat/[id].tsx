@@ -21,15 +21,17 @@ import { Image } from 'react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+// Telegram Dark Colors - EXACT
 const COLORS = {
-  background: '#0E1621',
-  surface: '#1C2733',
-  primary: '#2A9FD6',
-  text: '#FFFFFF',
-  textSecondary: '#8E9AA6',
-  border: '#2E3A47',
-  myMessage: '#2A9FD6',
-  otherMessage: '#1C2733',
+  background: '#0E1621',      // Самый темный фон
+  surface: '#17212B',         // Фон для header/cards
+  primary: '#64A9DC',         // Акцент голубой
+  text: '#FFFFFF',            // Белый текст
+  textSecondary: '#707579',   // Серый текст
+  border: '#0E1621',          // Границы
+  myMessage: '#2B5278',       // МОИ сообщения - темно-серый!
+  otherMessage: '#182533',    // Входящие - темно-серый
+  inputBg: '#17212B',         // Фон поля ввода
 };
 
 export default function ChatScreen() {
@@ -42,32 +44,10 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef(null);
 
   useEffect(() => {
     loadUser();
-    
-    // Keyboard listeners
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => {
-        setKeyboardHeight(e.endCoordinates.height);
-        setTimeout(() => scrollToBottom(), 100);
-      }
-    );
-    
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
   }, []);
 
   useEffect(() => {
@@ -122,7 +102,9 @@ export default function ChatScreen() {
 
   const scrollToBottom = () => {
     if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
@@ -223,7 +205,11 @@ export default function ChatScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
@@ -261,7 +247,7 @@ export default function ChatScreen() {
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.messagesList, { paddingBottom: keyboardHeight > 0 ? 20 : 0 }]}
+        contentContainerStyle={styles.messagesList}
         onContentSizeChange={scrollToBottom}
         onLayout={scrollToBottom}
         ListEmptyComponent={
@@ -272,40 +258,35 @@ export default function ChatScreen() {
         }
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-      >
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-          <TextInput
-            style={styles.input}
-            placeholder="Сообщение"
-            placeholderTextColor={COLORS.textSecondary}
-            value={inputText}
-            onChangeText={setInputText}
-            onFocus={scrollToBottom}
-            multiline
-            maxLength={1000}
-          />
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={sendMessage}
-            disabled={!inputText.trim() || sending}
-            activeOpacity={0.7}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
-            ) : (
-              <Ionicons
-                name="send"
-                size={22}
-                color={inputText.trim() ? COLORS.primary : COLORS.textSecondary}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </View>
+      <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <TextInput
+          style={styles.input}
+          placeholder="Сообщение"
+          placeholderTextColor={COLORS.textSecondary}
+          value={inputText}
+          onChangeText={setInputText}
+          onFocus={scrollToBottom}
+          multiline
+          maxLength={1000}
+        />
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={sendMessage}
+          disabled={!inputText.trim() || sending}
+          activeOpacity={0.7}
+        >
+          {sending ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Ionicons
+              name="send"
+              size={22}
+              color={inputText.trim() ? COLORS.primary : COLORS.textSecondary}
+            />
+          )}
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -317,15 +298,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: COLORS.background,
+    paddingHorizontal: 8,
+    paddingBottom: 12,
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 0.5,
     borderBottomColor: COLORS.border,
   },
   backButton: {
     padding: 8,
-    marginRight: 8,
+    marginRight: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerInfo: {
     flex: 1,
@@ -342,6 +325,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     padding: 16,
+    paddingBottom: 8,
   },
   messageRow: {
     flexDirection: 'row',
@@ -381,16 +365,16 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '75%',
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 12,
+    padding: 10,
   },
   myMessageBubble: {
     backgroundColor: COLORS.myMessage,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 2,
   },
   otherMessageBubble: {
     backgroundColor: COLORS.otherMessage,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 2,
   },
   senderName: {
     fontSize: 13,
@@ -399,7 +383,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.text,
     lineHeight: 20,
     marginBottom: 4,
@@ -414,9 +398,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 8,
     paddingTop: 8,
+    backgroundColor: COLORS.inputBg,
     borderTopWidth: 0.5,
     borderTopColor: COLORS.border,
-    backgroundColor: COLORS.background,
   },
   input: {
     flex: 1,
@@ -424,7 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.text,
     maxHeight: 100,
     marginRight: 8,

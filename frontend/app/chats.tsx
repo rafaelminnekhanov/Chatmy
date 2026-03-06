@@ -20,13 +20,13 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const COLORS = {
   background: '#0E1621',
-  surface: '#1C2733',
-  primary: '#2A9FD6',
+  surface: '#17212B',
+  primary: '#64A9DC',
   text: '#FFFFFF',
-  textSecondary: '#8E9AA6',
-  border: '#2E3A47',
+  textSecondary: '#707579',
+  border: '#0E1621',
   online: '#4CD964',
-  unread: '#2A9FD6',
+  unread: '#64A9DC',
 };
 
 export default function ChatsScreen() {
@@ -112,11 +112,18 @@ export default function ChatsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(item.name || 'U').charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          {!item.is_group && otherUser?.avatar ? (
+            <Image
+              source={{ uri: otherUser.avatar }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {(item.name || 'U').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
           {isOnline && <View style={styles.onlineIndicator} />}
         </View>
         
@@ -201,7 +208,7 @@ export default function ChatsScreen() {
             onPress={() => router.push('/users')}
             activeOpacity={0.7}
           >
-            <Ionicons name="create-outline" size={28} color={COLORS.text} />
+            <Ionicons name="create-outline" size={26} color={COLORS.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -241,12 +248,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: COLORS.background,
-  },
-  searchButton: {
-    padding: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    backgroundColor: COLORS.surface,
   },
   avatarButton: {
     marginRight: 8,
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -275,25 +279,30 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logo: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: COLORS.text,
   },
   headerButtons: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
   },
   headerButton: {
     padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chatItem: {
     flexDirection: 'row',
     padding: 16,
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 0.5,
     borderBottomColor: COLORS.border,
   },
@@ -305,7 +314,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -323,7 +332,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     backgroundColor: COLORS.online,
     borderWidth: 2,
-    borderColor: COLORS.background,
+    borderColor: COLORS.surface,
   },
   chatContent: {
     flex: 1,
@@ -352,7 +361,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lastMessage: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textSecondary,
     flex: 1,
   },
@@ -383,7 +392,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   emptySubtext: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 8,
     textAlign: 'center',
