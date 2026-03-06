@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "My Chat",
+    "name": "Мой Чат",
     "slug": "my-chat",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,9 +14,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#0E1621"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.mychat.app"
     },
     "web": {
       "bundler": "metro",
@@ -31,12 +32,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "backgroundColor": "#0E1621"
         }
-      ],
-      "expo-font",
-      "expo-image",
-      "expo-web-browser"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -9,6 +9,7 @@ import {
   RefreshControl,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
@@ -29,6 +30,7 @@ const COLORS = {
 
 export default function ChatsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState(null);
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,17 +159,24 @@ export default function ChatsScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Chat</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.push('/users')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="create-outline" size={28} color={COLORS.text} />
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={() => router.push('/search')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="search" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Мой Чат</Text>
+        
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.push('/users')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="create-outline" size={28} color={COLORS.text} />
+        </TouchableOpacity>
       </View>
 
       {chats.length === 0 ? (
@@ -205,18 +214,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 8,
     backgroundColor: COLORS.background,
+  },
+  searchButton: {
+    padding: 8,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: COLORS.text,
-  },
-  headerButtons: {
-    flexDirection: 'row',
   },
   headerButton: {
     padding: 8,

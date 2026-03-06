@@ -10,7 +10,9 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
@@ -32,6 +34,7 @@ const COLORS = {
 export default function ChatScreen() {
   const router = useRouter();
   const { id: chatId } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState(null);
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -106,6 +109,7 @@ export default function ChatScreen() {
     const messageText = inputText.trim();
     setInputText('');
     setSending(true);
+    Keyboard.dismiss();
 
     try {
       const response = await axios.post(
@@ -191,7 +195,7 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -240,7 +244,7 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           <TextInput
             style={styles.input}
             placeholder="Сообщение"
@@ -280,7 +284,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 8,
     backgroundColor: COLORS.background,
@@ -371,7 +374,8 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingTop: 8,
     borderTopWidth: 0.5,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.background,
@@ -393,6 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 2,
   },
   emptyContainer: {
     alignItems: 'center',
