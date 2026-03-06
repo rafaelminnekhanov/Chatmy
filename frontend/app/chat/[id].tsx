@@ -196,11 +196,7 @@ export default function ChatScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
+    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
@@ -239,6 +235,7 @@ export default function ChatScreen() {
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
         inverted
+        style={{ flex: 1 }}
         contentContainerStyle={styles.messagesList}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -275,7 +272,7 @@ export default function ChatScreen() {
           )}
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

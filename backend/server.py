@@ -408,6 +408,22 @@ async def mark_message_read(message_id: str, user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@api_router.get("/download/project")
+async def download_project():
+    """Download project archive"""
+    from fastapi.responses import FileResponse
+    import os
+    
+    file_path = "/app/my-chat-project.tar.gz"
+    if os.path.exists(file_path):
+        return FileResponse(
+            path=file_path,
+            filename="my-chat-project.tar.gz",
+            media_type="application/gzip"
+        )
+    else:
+        raise HTTPException(status_code=404, detail="File not found")
+
 # WebSocket endpoint
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
