@@ -32,7 +32,7 @@ eas login
 EXPO_PUBLIC_BACKEND_URL=https://ваш-домен.com
 
 # Если пока тестируете локально
-EXPO_PUBLIC_BACKEND_URL=https://private-messenger-136.preview.emergentagent.com
+EXPO_PUBLIC_BACKEND_URL=https://chat-minimal-1.preview.emergentagent.com
 ```
 
 ## Шаг 5: Инициализация EAS Build

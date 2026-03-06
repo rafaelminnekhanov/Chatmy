@@ -20,7 +20,7 @@ except ImportError:
     print("⚠️  WebSocket client not available - WebSocket tests will be skipped")
 
 # Get backend URL from environment
-BACKEND_URL = "https://private-messenger-136.preview.emergentagent.com/api"
+BACKEND_URL = "https://chat-minimal-1.preview.emergentagent.com/api"
 WS_URL = "wss://private-messenger-136.preview.emergentagent.com/ws"
 
 # Global test results
